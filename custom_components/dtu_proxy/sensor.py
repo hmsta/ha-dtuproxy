@@ -41,6 +41,7 @@ from .entity import (
 )
 
 ValueFn = Callable[[dict[str, Any]], Any]
+AvailableFn = Callable[[dict[str, Any]], bool]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -48,6 +49,7 @@ class DtuSensorDescription(SensorEntityDescription):
     """Describe a DTU Proxy sensor."""
 
     value_fn: ValueFn
+    available_fn: AvailableFn | None = None
     stable_last_boot: bool = False
 
 
@@ -144,6 +146,19 @@ PROXY_SENSORS: tuple[DtuSensorDescription, ...] = (
             nested_value(data, "temperature", "celsius")
             if nested_value(data, "temperature", "valid")
             else None
+        ),
+    ),
+    DtuSensorDescription(
+        key="wifi_rssi",
+        translation_key="wifi_rssi",
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        native_unit_of_measurement="dBm",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: nested_value(data, "network", "wifi_sta_rssi"),
+        available_fn=lambda data: (
+            nested_value(data, "network", "wifi_sta_connected") is True
+            and isinstance(nested_value(data, "network", "wifi_sta_rssi"), (int, float))
         ),
     ),
     DtuSensorDescription(
@@ -442,6 +457,14 @@ class DtuProxySensor(_LastBootTracker, CoordinatorEntity[ProxyStatusCoordinator]
         self.entity_description = description
         self._attr_unique_id = f"{entry.entry_id}:proxy:{description.key}"
         self._attr_device_info = proxy_device_info(entry, entry.runtime_data)
+
+    @property
+    def available(self) -> bool:
+        """Return whether this proxy sensor currently has a usable value."""
+        available_fn = self.entity_description.available_fn
+        return super().available and (
+            available_fn(self.coordinator.data or {}) if available_fn else True
+        )
 
     @property
     def native_value(self) -> Any:

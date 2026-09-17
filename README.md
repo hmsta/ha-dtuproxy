@@ -82,6 +82,7 @@ disabled.
 | Connected clients | Enabled | `3` | Number of gateway clients currently connected to the proxy. |
 | Active master | Enabled | `gw01` | Gateway ID of the authoritative master; history shows master changes and flip-flopping. |
 | Internal temperature | Enabled | `47.2 °C` | Proxy internal-die temperature for thermal alerts. |
+| Wi-Fi signal strength | Enabled | `-63 dBm` | Proxy Wi-Fi RSSI for weak-signal alerting; unavailable while the Wi-Fi station is disconnected. |
 | Last boot | Enabled | `2026-09-16 08:42:17 UTC` | Stable timestamp derived from uptime; changes only after a device reboot. |
 | Reset reason | Enabled | `Power on` | Firmware-reported reason for the most recent boot. |
 | Healthy clients | Disabled | `3` | Healthy-client count; normally redundant with Fleet healthy. |
