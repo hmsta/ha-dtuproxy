@@ -22,7 +22,7 @@ firmware configuration or OTA endpoints.
 
 ## Requirements
 
-- Home Assistant 2026.8 or newer.
+- Home Assistant 2026.7.4 or newer.
 - A reachable DTU Proxy HTTP endpoint exposing `/status.json` and `/meter.json`.
 - Reachable client HTTP endpoints exposing `/status.json` for client-local
   diagnostics.
