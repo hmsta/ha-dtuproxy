@@ -1,0 +1,33 @@
+{
+  "now_ms": 12251096,
+  "meterData": [
+    {
+      "deviceType": 1,
+      "serialNumber": null,
+      "phaseTotalPower": -20010,
+      "phaseAPower": -5400,
+      "phaseBPower": -9120,
+      "phaseCPower": -5490,
+      "powerFactorTotal": -951,
+      "energyTotalPower": 9399000,
+      "energyPhaseA": 2772422,
+      "energyPhaseB": 3422016,
+      "energyPhaseC": 3204563,
+      "energyTotalConsumed": 26427234,
+      "energyPhaseAConsumed": 9432234,
+      "energyPhaseBConsumed": 8869875,
+      "energyPhaseCConsumed": 8125125,
+      "faultCode": 0,
+      "voltagePhaseA": 23160,
+      "voltagePhaseB": 23000,
+      "voltagePhaseC": 23160,
+      "currentPhaseA": 25200,
+      "currentPhaseB": 40200,
+      "currentPhaseC": 25800,
+      "powerFactorPhaseA": -922,
+      "powerFactorPhaseB": -988,
+      "powerFactorPhaseC": -920
+    }
+  ],
+  "entries": []
+}

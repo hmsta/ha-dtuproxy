@@ -1,0 +1,85 @@
+{
+  "title": "DTU Proxy",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to the DTU Proxy",
+        "description": "Enter the local address of the proxy. Use only the host or IP address, without http:// or a path.",
+        "data": {"host": "Proxy host", "port": "HTTP port"}
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the endpoint",
+      "invalid_host": "Enter a host or IP address without a URL scheme or path",
+      "invalid_proxy": "The endpoint did not return a valid DTU Proxy status",
+      "unknown": "Unexpected error"
+    },
+    "abort": {"already_configured": "This proxy is already configured"}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Meter update interval",
+        "description": "Choose how often Home Assistant requests /meter.json from the proxy.",
+        "data": {"meter_interval": "Update interval (seconds)"}
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "connected_clients": {"name": "Connected clients"},
+      "healthy_clients": {"name": "Healthy clients"},
+      "active_master": {"name": "Active master"},
+      "temperature": {"name": "Internal temperature"},
+      "last_boot": {"name": "Last boot"},
+      "cache_entries": {"name": "Cache entries"},
+      "cache_generation": {"name": "Cache generation"},
+      "free_heap": {"name": "Free heap"},
+      "reset_reason": {"name": "Reset reason"},
+      "dtu_presence": {"name": "Local DTU presence"},
+      "wifi_rssi": {"name": "Wi-Fi signal strength"},
+      "cache_ack_age": {"name": "Cache acknowledgment age"},
+      "prepare_timeouts": {"name": "Prepare timeouts"},
+      "commit_timeouts": {"name": "Commit timeouts"},
+      "master_attempts": {"name": "Master attempts"},
+      "proxy_receive_age": {"name": "Proxy receive age"},
+      "fault_code": {"name": "Fault code"},
+      "total_power": {"name": "Total active power"},
+      "phase_a_power": {"name": "Phase A active power"},
+      "phase_b_power": {"name": "Phase B active power"},
+      "phase_c_power": {"name": "Phase C active power"},
+      "phase_a_voltage": {"name": "Phase A voltage"},
+      "phase_b_voltage": {"name": "Phase B voltage"},
+      "phase_c_voltage": {"name": "Phase C voltage"},
+      "phase_a_current": {"name": "Phase A current"},
+      "phase_b_current": {"name": "Phase B current"},
+      "phase_c_current": {"name": "Phase C current"},
+      "total_power_factor": {"name": "Total power factor"},
+      "phase_a_power_factor": {"name": "Phase A power factor"},
+      "phase_b_power_factor": {"name": "Phase B power factor"},
+      "phase_c_power_factor": {"name": "Phase C power factor"},
+      "exported_energy": {"name": "Exported energy"},
+      "imported_energy": {"name": "Imported energy"},
+      "phase_a_exported_energy": {"name": "Phase A exported energy"},
+      "phase_b_exported_energy": {"name": "Phase B exported energy"},
+      "phase_c_exported_energy": {"name": "Phase C exported energy"},
+      "phase_a_imported_energy": {"name": "Phase A imported energy"},
+      "phase_b_imported_energy": {"name": "Phase B imported energy"},
+      "phase_c_imported_energy": {"name": "Phase C imported energy"}
+    },
+    "binary_sensor": {
+      "fleet_healthy": {"name": "Fleet healthy"},
+      "active_master_dtu_confirmed": {"name": "Active master DTU confirmed"},
+      "ethernet_link": {"name": "Ethernet link"},
+      "wifi_connected": {"name": "Wi-Fi connected"},
+      "network_transition": {"name": "Network transition"},
+      "connected": {"name": "Connected"},
+      "healthy": {"name": "Healthy"},
+      "cache_synchronized": {"name": "Cache synchronized"},
+      "resynchronizing": {"name": "Resynchronizing"},
+      "meter_data_available": {"name": "Meter data available"},
+      "power_data_available": {"name": "Power data available"},
+      "energy_data_available": {"name": "Energy data available"}
+    }
+  }
+}
