@@ -14,6 +14,7 @@ client reported by the proxy.
 - Per-field availability when power or energy cache blocks are stale.
 - Proxy and client health, master state, cache, Wi-Fi, temperature, last-boot, reset, and
   memory diagnostics.
+- Automatic Home Assistant device firmware updates after proxy or client OTA updates.
 - Privacy-conscious diagnostics that redact endpoint addresses, network
   addresses, SSIDs, and credentials and omit raw Modbus frames.
 
