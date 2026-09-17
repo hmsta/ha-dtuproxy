@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from ipaddress import ip_address
 from typing import Any
 
@@ -45,6 +46,7 @@ class DtuProxyApi:
 
     def __init__(self, session: ClientSession, host: str, port: int = DEFAULT_PORT) -> None:
         self._session = session
+        self._request_lock = asyncio.Lock()
         self.host = normalize_host(host)
         self.port = port
 
@@ -57,17 +59,20 @@ class DtuProxyApi:
         return f"http://{authority}"
 
     async def _get_json(self, path: str) -> dict[str, Any]:
-        try:
-            async with self._session.get(
-                f"{self.base_url}{path}",
-                timeout=ClientTimeout(total=REQUEST_TIMEOUT_SECONDS),
-            ) as response:
-                response.raise_for_status()
-                payload = await response.json(content_type=None)
-        except (ClientError, TimeoutError) as err:
-            raise DtuProxyConnectionError(str(err)) from err
-        except ValueError as err:
-            raise DtuProxyInvalidResponse("Endpoint did not return valid JSON") from err
+        # Proxy status and meter coordinators share this API instance. Serialize
+        # their requests so the embedded HTTP server only handles one at a time.
+        async with self._request_lock:
+            try:
+                async with self._session.get(
+                    f"{self.base_url}{path}",
+                    timeout=ClientTimeout(total=REQUEST_TIMEOUT_SECONDS),
+                ) as response:
+                    response.raise_for_status()
+                    payload = await response.json(content_type=None)
+            except (ClientError, TimeoutError) as err:
+                raise DtuProxyConnectionError(str(err)) from err
+            except ValueError as err:
+                raise DtuProxyInvalidResponse("Endpoint did not return valid JSON") from err
 
         if not isinstance(payload, dict):
             raise DtuProxyInvalidResponse("Expected a JSON object")

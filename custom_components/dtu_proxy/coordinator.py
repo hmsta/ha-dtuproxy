@@ -14,7 +14,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import DtuProxyApi, DtuProxyError, client_gateway_id, normalize_host
-from .const import CLIENT_STATUS_INTERVAL, PROXY_STATUS_INTERVAL
+from .const import (
+    CLIENT_STATUS_INTERVAL,
+    PROXY_STATUS_INTERVAL,
+    RETRY_BACKOFF_INITIAL_SECONDS,
+    RETRY_BACKOFF_MAX_SECONDS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,6 +44,27 @@ class _DtuCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=update_interval,
         )
         self.api = api
+        self._consecutive_failures = 0
+
+    def _next_retry_delay(self) -> float:
+        """Return a bounded exponential delay after a failed request."""
+        interval_seconds = (
+            self.update_interval.total_seconds()
+            if self.update_interval is not None
+            else RETRY_BACKOFF_INITIAL_SECONDS
+        )
+        base_delay = max(interval_seconds, RETRY_BACKOFF_INITIAL_SECONDS)
+        delay = min(
+            base_delay * (2**self._consecutive_failures),
+            RETRY_BACKOFF_MAX_SECONDS,
+        )
+        if delay < RETRY_BACKOFF_MAX_SECONDS:
+            self._consecutive_failures += 1
+        return delay
+
+    def _request_succeeded(self) -> None:
+        """Reset retry backoff after communication recovers."""
+        self._consecutive_failures = 0
 
 
 class ProxyStatusCoordinator(_DtuCoordinator):
@@ -55,9 +81,11 @@ class ProxyStatusCoordinator(_DtuCoordinator):
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            return await self.api.async_status()
+            data = await self.api.async_status()
         except DtuProxyError as err:
-            raise UpdateFailed(str(err)) from err
+            raise UpdateFailed(str(err), retry_after=self._next_retry_delay()) from err
+        self._request_succeeded()
+        return data
 
 
 class MeterCoordinator(_DtuCoordinator):
@@ -80,9 +108,11 @@ class MeterCoordinator(_DtuCoordinator):
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            return await self.api.async_meter()
+            data = await self.api.async_meter()
         except DtuProxyError as err:
-            raise UpdateFailed(str(err)) from err
+            raise UpdateFailed(str(err), retry_after=self._next_retry_delay()) from err
+        self._request_succeeded()
+        return data
 
 
 class ClientFleetCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):

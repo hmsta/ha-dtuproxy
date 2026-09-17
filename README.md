@@ -176,6 +176,13 @@ unavailable without deleting them.
 - Proxy and proxy-observed client status: 30 seconds
 - Direct client diagnostics: 60 seconds
 
+HTTP requests time out after 5 seconds. Proxy status and meter requests are
+serialized so a new request is not sent to the proxy while another is still in
+progress. Failed proxy requests use exponential backoff starting at the greater
+of 30 seconds or the configured interval, capped at 5 minutes; a successful
+request immediately restores the normal polling interval. Offline clients are
+retried on their normal 60-second diagnostics cycle.
+
 Home Assistant is used for monitoring rather than the proxy's real-time control
 loop.
 

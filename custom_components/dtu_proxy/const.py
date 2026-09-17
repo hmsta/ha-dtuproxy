@@ -20,6 +20,8 @@ PROXY_STATUS_INTERVAL = timedelta(seconds=30)
 CLIENT_STATUS_INTERVAL = timedelta(seconds=60)
 
 REQUEST_TIMEOUT_SECONDS = 5
+RETRY_BACKOFF_INITIAL_SECONDS = 30
+RETRY_BACKOFF_MAX_SECONDS = 300
 
 
 def proxy_identifier(entry_id: str) -> str:
