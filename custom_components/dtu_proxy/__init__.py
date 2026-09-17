@@ -47,7 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: DtuProxyConfigEntry) -> 
     if not isinstance(firmware, dict):
         firmware = {}
     registry = dr.async_get(hass)
-    proxy_device = registry.async_get_or_create(
+    registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, proxy_identifier(entry.entry_id))},
         name=DEFAULT_NAME,
@@ -63,7 +63,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: DtuProxyConfigEntry) -> 
         status=status,
         meter=meter,
         clients=clients,
-        proxy_device_id=proxy_device.id,
     )
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

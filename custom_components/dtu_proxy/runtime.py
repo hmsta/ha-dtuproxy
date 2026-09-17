@@ -16,4 +16,3 @@ class DtuProxyRuntimeData:
     status: ProxyStatusCoordinator
     meter: MeterCoordinator
     clients: ClientFleetCoordinator
-    proxy_device_id: str

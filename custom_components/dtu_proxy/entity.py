@@ -79,7 +79,7 @@ def client_device_info(
         sw_version=firmware.get("version"),
         hw_version=firmware.get("target"),
         configuration_url=(runtime.clients.client_base_url(gateway_id) or runtime.api.base_url),
-        via_device_id=runtime.proxy_device_id,
+        via_device=(DOMAIN, proxy_identifier(entry.entry_id)),
     )
 
 
@@ -99,5 +99,5 @@ def meter_device_info(entry: DtuProxyConfigEntry, runtime: DtuProxyRuntimeData) 
         model="DTSU666 energy meter",
         serial_number=serial_number,
         configuration_url=f"{runtime.api.base_url}/meter.json",
-        via_device_id=runtime.proxy_device_id,
+        via_device=(DOMAIN, proxy_identifier(entry.entry_id)),
     )
