@@ -14,6 +14,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import (
     DtuProxyApi,
     DtuProxyConnectionError,
+    DtuProxyHttpError,
     DtuProxyInvalidResponse,
     normalize_host,
     validate_proxy_status,
@@ -48,7 +49,7 @@ class DtuProxyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_HOST] = "invalid_host"
             except DtuProxyConnectionError:
                 errors["base"] = "cannot_connect"
-            except DtuProxyInvalidResponse:
+            except (DtuProxyHttpError, DtuProxyInvalidResponse):
                 errors["base"] = "invalid_proxy"
             except Exception:  # noqa: BLE001
                 errors["base"] = "unknown"
