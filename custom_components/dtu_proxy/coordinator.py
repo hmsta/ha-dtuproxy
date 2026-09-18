@@ -20,6 +20,7 @@ from .const import (
     RETRY_BACKOFF_INITIAL_SECONDS,
     RETRY_BACKOFF_MAX_SECONDS,
 )
+from .failure_grace import ConsecutiveFailureTracker
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class _DtuCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=update_interval,
         )
         self.api = api
-        self._consecutive_failures = 0
+        self._failure_tracker = ConsecutiveFailureTracker()
 
     def _next_retry_delay(self) -> float:
         """Return a bounded exponential delay after a failed request."""
@@ -55,16 +56,27 @@ class _DtuCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         base_delay = max(interval_seconds, RETRY_BACKOFF_INITIAL_SECONDS)
         delay = min(
-            base_delay * (2**self._consecutive_failures),
+            base_delay * (2**self._failure_tracker.retry_exponent),
             RETRY_BACKOFF_MAX_SECONDS,
         )
-        if delay < RETRY_BACKOFF_MAX_SECONDS:
-            self._consecutive_failures += 1
         return delay
 
+    def _request_failed(self, err: DtuProxyError) -> dict[str, Any]:
+        """Retain cached data for one failed request, then expose the outage."""
+        cached_data = self.data
+        if self._failure_tracker.record_failure(has_cached_data=cached_data is not None):
+            _LOGGER.debug(
+                "Retaining the last %s payload after a transient request failure: %s",
+                self.name,
+                err,
+            )
+            assert cached_data is not None
+            return cached_data
+        raise UpdateFailed(str(err), retry_after=self._next_retry_delay()) from err
+
     def _request_succeeded(self) -> None:
-        """Reset retry backoff after communication recovers."""
-        self._consecutive_failures = 0
+        """Reset failure grace and retry backoff after communication recovers."""
+        self._failure_tracker.record_success()
 
 
 class ProxyStatusCoordinator(_DtuCoordinator):
@@ -83,7 +95,7 @@ class ProxyStatusCoordinator(_DtuCoordinator):
         try:
             data = await self.api.async_status()
         except DtuProxyError as err:
-            raise UpdateFailed(str(err), retry_after=self._next_retry_delay()) from err
+            return self._request_failed(err)
         self._request_succeeded()
         return data
 
@@ -110,7 +122,7 @@ class MeterCoordinator(_DtuCoordinator):
         try:
             data = await self.api.async_meter()
         except DtuProxyError as err:
-            raise UpdateFailed(str(err), retry_after=self._next_retry_delay()) from err
+            return self._request_failed(err)
         self._request_succeeded()
         return data
 
@@ -135,6 +147,7 @@ class ClientFleetCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         self._session = session
         self._proxy_status = proxy_status
         self._hosts: dict[str, str] = {}
+        self._failure_trackers: dict[str, ConsecutiveFailureTracker] = {}
 
     def client_base_url(self, gateway_id: str) -> str | None:
         """Return the current direct URL for a discovered client."""
@@ -191,13 +204,39 @@ class ClientFleetCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
 
     async def _async_update_data(self) -> dict[str, dict[str, Any]]:
         self._hosts = self._discovered_hosts()
-        if not self._hosts:
-            return {}
-
         results = await asyncio.gather(
             *(
                 self._async_fetch_client(gateway_id, host)
                 for gateway_id, host in self._hosts.items()
             )
         )
-        return {gateway_id: payload for gateway_id, payload in results if payload is not None}
+        fetched = dict(results)
+        previous = self.data or {}
+        updated: dict[str, dict[str, Any]] = {}
+
+        for gateway_id in self._hosts.keys() | previous.keys():
+            payload = fetched.get(gateway_id)
+            tracker = self._failure_trackers.setdefault(
+                gateway_id, ConsecutiveFailureTracker()
+            )
+            if payload is not None:
+                tracker.record_success()
+                updated[gateway_id] = payload
+                continue
+
+            cached_payload = previous.get(gateway_id)
+            if tracker.record_failure(has_cached_data=cached_payload is not None):
+                _LOGGER.debug(
+                    "Retaining the last direct status payload for %s after a transient failure",
+                    gateway_id,
+                )
+                assert cached_payload is not None
+                updated[gateway_id] = cached_payload
+
+        active_gateway_ids = self._hosts.keys() | updated.keys()
+        self._failure_trackers = {
+            gateway_id: tracker
+            for gateway_id, tracker in self._failure_trackers.items()
+            if gateway_id in active_gateway_ids
+        }
+        return updated

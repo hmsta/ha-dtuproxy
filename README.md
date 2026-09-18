@@ -180,10 +180,14 @@ unavailable without deleting them.
 
 HTTP requests time out after 5 seconds. Proxy status and meter requests are
 serialized so a new request is not sent to the proxy while another is still in
-progress. Failed proxy requests use exponential backoff starting at the greater
-of 30 seconds or the configured interval, capped at 5 minutes; a successful
-request immediately restores the normal polling interval. Offline clients are
-retried on their normal 60-second diagnostics cycle.
+progress. A single failed proxy, meter, or direct-client request retains the
+last successful payload so a transient network miss does not make entities
+briefly unavailable. A second consecutive failure exposes the outage; a
+successful request resets the failure streak immediately. Failed proxy requests
+then use exponential backoff starting at the greater of 30 seconds or the
+configured interval, capped at 5 minutes. Offline clients are retried on their
+normal 60-second diagnostics cycle. Explicitly missing or stale meter fields
+reported as `null` still become unavailable immediately.
 
 Home Assistant is used for monitoring rather than the proxy's real-time control
 loop.
